@@ -1,28 +1,15 @@
-console.log("Hello World!");
-
 const gameBoard = (function () {
-  // if (!new.target) {
-  //   throw Error("You must use the 'new' operator to call the constructor");
-  // }
   const blank = " ";
 
-  let currentPlayer = "x";
+  let currentPlayer = "X";
+  let winner = "";
+  let turn = 0;
 
   const board = [
     [blank, blank, blank],
     [blank, blank, blank],
     [blank, blank, blank],
   ];
-  // const board = [
-  //   ["x", "o", "o"],
-  //   ["o", "x", "o"],
-  //   ["o", "o", "x"],
-  // ];
-  // const board = [
-  //   ["0,0", "0,1", "0,2"],
-  //   ["1,0", "1,1", "1,2"],
-  //   ["2,0", "2,1", "2,2"],
-  // ];
 
   const printBoardState = () => {
     console.group("printBoardState()");
@@ -39,7 +26,6 @@ const gameBoard = (function () {
   };
 
   const isPositionValid = (row, col) => {
-    // let result = true;
     if (row < 0 || row > board.length) {
       console.log(`Row '${row}' is invalid`);
       return false;
@@ -54,27 +40,37 @@ const gameBoard = (function () {
 
   const getPositionValue = (row, col) => {
     if (isPositionValid(row, col)) {
-      // console.log(`getPositionValue(${row}, ${col}) = '${board[row][col]}'`);
       return board[row][col];
     }
   };
 
   const setPositionValue = (row, col, val) => {
+    let result = false;
     if (isPositionValid(row, col)) {
-      if (getPositionValue(row, col) === blank) {
+      if (
+        (getPositionValue(row, col) === blank && winner === "") ||
+        val === blank
+      ) {
         // console.log(`setPositionValue(${row}, ${col}, ${val}): Success`);
         board[row][col] = val;
-        checkForWin(val);
+
+        if (val !== blank) {
+          turn++;
+          if (!checkForWin(val) && turn >= 9) {
+            console.log(`It's a draw!`);
+            showResetButton();
+          }
+        }
+        result = true;
       } else {
         // console.log(`setPositionValue(${row}, ${col}, ${val}): spot is taken`);
       }
     } else {
-      console
-        .log
-        // `setPositionValue(${row}, ${col}, ${val}): Spot is not valid`
-        ();
+      // console.log(
+      //   `setPositionValue(${row}, ${col}, ${val}): Spot is not valid`
+      // );
     }
-    return true;
+    return result;
   };
 
   const checkForWin = (marker) => {
@@ -122,18 +118,11 @@ const gameBoard = (function () {
     ];
 
     let results = possibleWins.map((win) => {
-      // console.log(win);
       let result = win.reduce((accumulator, currentValue) => {
-        // return accumulator + currentValue[0] + currentValue[1];
-        //return accumulator + board[currentValue[0]][currentValue[1]]
         let num = board[currentValue[0]][currentValue[1]] === marker ? 1 : 0;
-        // console.log(num);
         return accumulator + num;
       }, 0);
-
-      // console.log(`result = ${result}`);
       return result;
-      // console.log(result);
     });
 
     if (
@@ -142,6 +131,8 @@ const gameBoard = (function () {
       }) !== -1
     ) {
       console.log(`${marker} Wins!`);
+      winner = marker;
+      showResetButton();
       return true;
     } else {
       // console.log(`${marker} did not win this turn`);
@@ -150,15 +141,12 @@ const gameBoard = (function () {
   };
 
   const createBoard = () => {
-    printBoardState();
-    const body = document.querySelector("body");
-    const board = document.createElement("div");
-    board.classList.add("board");
-    body.appendChild(board);
+    // printBoardState();
+    const board = document.querySelector("div + .board");
 
     for (i = 0; i < 3; i++) {
       let row = document.createElement("div");
-      row.classList.add("boardRow");
+      row.classList.add("board-row");
       board.appendChild(row);
       for (j = 0; j < 3; j++) {
         let col = createButton(i, j);
@@ -167,13 +155,28 @@ const gameBoard = (function () {
     }
   };
 
+  const resetBoard = () => {
+    // console.group("resetBoard()");
+    spaces = document.querySelectorAll(".board-space");
+    next = nextPlayer();
+
+    spaces.forEach((button) => {
+      currentPlayer = blank;
+      // console.log("currentPlayer = " + currentPlayer);
+      button.click();
+    });
+    currentPlayer = next;
+    // console.groupEnd();
+    winner = "";
+    turn = 0;
+  };
+
   const createButton = (row, col) => {
     let button = document.createElement("Button");
-    button.textContent = " ";
     button.dataset.row = row;
     button.dataset.col = col;
+    button.classList.add("board-space");
     button.addEventListener("click", () => {
-      console.log(`row = ${button.dataset.row}, col = ${button.dataset.col}`);
       let player = getCurrentPlayer();
       if (setPositionValue(button.dataset.row, button.dataset.col, player)) {
         button.textContent = player;
@@ -183,12 +186,24 @@ const gameBoard = (function () {
     return button;
   };
 
+  const showResetButton = () => {
+    const output = document.querySelector("div + .output");
+    resetButton = document.createElement("button");
+    resetButton.textContent = "Play Again";
+    resetButton.addEventListener("click", () => {
+      resetBoard();
+      resetButton.remove();
+    });
+    output.appendChild(resetButton);
+  };
+
   const getCurrentPlayer = () => {
     return currentPlayer;
   };
 
   const nextPlayer = () => {
-    currentPlayer = currentPlayer === "x" ? "o" : "x";
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    return currentPlayer;
   };
 
   return {
@@ -201,27 +216,3 @@ const gameBoard = (function () {
 })();
 
 gameBoard.createBoard();
-// gameBoard.setPositionValue(1, 2, "x");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(1, 1, "o");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(2, 0, "x");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(2, 1, "o");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(0, 2, "x");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(0, 1, "o");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(1, 2, "x");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(1, 2, "o");
-// gameBoard.printBoardState();
-// gameBoard.setPositionValue(1, 2, "x");
-// gameBoard.printBoardState();
-
-// gameBoard.getPositionValue(0, 0);
-
-// gameBoard.setPositionValue(1, 2, "x");
-
-// gameBoard.checkForWin("x");
